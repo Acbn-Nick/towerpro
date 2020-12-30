@@ -1,7 +1,6 @@
-package main
+package client
 
 import (
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -18,34 +17,29 @@ func setDefaults() *configuration {
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("toml")
-	viper.AddConfigPath(".")
+	viper.AddConfigPath("./cmd")
 	viper.SetDefault("Toggle", "`")
 	viper.Unmarshal(&config)
 
 	return &config
 }
 
-func (c *configuration) loadConfig() error {
-	log.Info("loading config from: %s", viper.ConfigFileUsed())
+func (p *Performer) loadConfig() {
+	p.log.Info("loading config")
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Info("failed to find file, using defaults")
-			return err
+			p.log.Warn("failed to find file, using defaults")
 		} else {
-			log.Info("failed to access config file (are permissions correct?")
-			return err
+			p.log.Fatal("failed to access config file (are permissions correct?")
 		}
 	}
 
-	if err := viper.UnmarshalExact(c); err != nil {
-		log.Info("failed to parse config, using defaults")
-		log.Info(err.Error())
-		return err
+	if err := viper.UnmarshalExact(p.config); err != nil {
+		p.log.Warn("failed to parse config, using defaults")
+		p.log.Warn(err.Error())
 	}
 
-	log.Info("using settings:")
-	log.Info("Toggle: " + c.Toggle)
-
-	return nil
+	p.log.Info("using settings:")
+	p.log.Info("Toggle: " + p.config.Toggle)
 }

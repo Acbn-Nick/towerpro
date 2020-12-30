@@ -1,23 +1,32 @@
 package main
 
 import (
-	log "github.com/sirupsen/logrus"
+	"os"
+
+	"github.com/sirupsen/logrus"
+
+	client "github.com/Acbn-Nick/towerpro/internal"
 )
 
-type application struct {
-	config *configuration
-	reload chan interface{}
-	done   chan interface{}
-}
-
 func main() {
-	log.Info("starting towerpro...")
-	app := &application{
-		reload: make(chan interface{}),
-		done:   make(chan interface{}),
+	log := logrus.New()
+
+	logFile, err := os.OpenFile("log.txt", os.O_CREATE, 0666)
+	if err != nil {
+		log.Fatal("error creating log.txt: %+v", err)
 	}
-	//call setup
-	//start
-	<-app.done
+
+	defer logFile.Close()
+
+	log.SetReportCaller(true)
+	log.Out = logFile
+
+	done := make(chan interface{})
+
+	log.Info("starting towerpro...")
+
+	app := client.New(done, log)
+	app.Start()
+	<-app.Done
 	return
 }
