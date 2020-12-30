@@ -13,7 +13,7 @@ func main() {
 
 	logFile, err := os.OpenFile("log.txt", os.O_CREATE, 0666)
 	if err != nil {
-		log.Fatal("error creating log.txt: %+v", err)
+		log.Fatalf("error creating log.txt: %+v", err)
 	}
 
 	defer logFile.Close()
