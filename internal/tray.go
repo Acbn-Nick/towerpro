@@ -2,8 +2,7 @@ package client
 
 import (
 	"io/ioutil"
-	"os"
-	"strings"
+	"runtime"
 	"time"
 
 	"github.com/gen2brain/dlgs"
@@ -25,30 +24,33 @@ func (p *Performer) onReady() {
 	openFile := systray.AddMenuItem("Open MIDI file...", "Select a MIDI file to open")
 
 	go func() {
-		<-openFile.ClickedCh
+		for {
+			<-openFile.ClickedCh
 
-		f, b, err := dlgs.File("Select file", "Audio (*.mid, *.midi)", false)
-		if err != nil {
-			p.log.Warnf("error with file dialog: %+v", err)
-			return
+			var format string
+
+			switch runtime.GOOS {
+			case "linux":
+				format = "Audio (*.mid,*.midi) | *.mid *.midi"
+			case "windows":
+				format = "Audio (*.mid, *.midi)\x00*.mid;*.midi\x00All Files (*.*)\x00*.*\x00\x00"
+			case "darwin":
+				format = "public.audio"
+			}
+
+			f, b, err := dlgs.File("Select file", format, false)
+			if err != nil {
+				p.log.Warnf("error with file dialog: %+v", err)
+				return
+			}
+
+			if !b {
+				p.log.Info("no file selected")
+				return
+			}
+
+			p.LoadMusic(f)
 		}
-
-		if !b {
-			p.log.Info("no file selected")
-			return
-		}
-
-		if !strings.HasSuffix(strings.ToUpper(f), ".MID") || !strings.HasSuffix(strings.ToUpper(f), ".MIDI") {
-			p.log.Warnf("invalid file format on file: %s", f)
-			return
-		}
-
-		file, err := os.Open(f)
-		if err != nil {
-			p.log.Warnf("error retrieving file: %+v", err)
-		}
-
-		p.music = file
 	}()
 
 	systray.AddSeparator()
@@ -61,9 +63,11 @@ func (p *Performer) onReady() {
 	reload := systray.AddMenuItem("Reload config", "Reload config.toml")
 
 	go func() {
-		<-reload.ClickedCh
-		p.log.Info("reloading config")
-		p.loadConfig()
+		for {
+			<-reload.ClickedCh
+			p.log.Info("reloading config")
+			p.loadConfig()
+		}
 	}()
 
 	quit := systray.AddMenuItem("Quit", "Exit TowerPro")
@@ -71,10 +75,10 @@ func (p *Performer) onReady() {
 	go func() {
 		<-quit.ClickedCh
 		p.log.Info("exiting towerpro")
-		p.Done <- nil
+		p.Kill <- nil
 	}()
 }
 
 func (p *Performer) onExit() {
-	p.Done <- nil
+	p.Kill <- nil
 }

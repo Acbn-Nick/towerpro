@@ -9,4 +9,6 @@ require (
 	github.com/robotn/gohook v0.30.4
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/viper v1.7.1
+	gitlab.com/gomidi/midi v1.20.3
+	gitlab.com/gomidi/rtmididrv v0.10.1
 )

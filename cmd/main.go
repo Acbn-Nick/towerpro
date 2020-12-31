@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"os/signal"
 
 	"github.com/sirupsen/logrus"
 
@@ -19,7 +20,7 @@ func main() {
 	defer logFile.Close()
 
 	log.SetReportCaller(true)
-	log.Out = logFile
+	///log.Out = logFile
 
 	done := make(chan interface{})
 
@@ -27,6 +28,20 @@ func main() {
 
 	app := client.New(done, log)
 	app.Start()
+
+	var sigchan = make(chan os.Signal, 10)
+	go signal.Notify(sigchan, os.Interrupt)
+
+	go func() {
+		for {
+			select {
+			case <-sigchan:
+				app.Kill <- nil
+			default:
+			}
+		}
+	}()
 	<-app.Done
+
 	return
 }
